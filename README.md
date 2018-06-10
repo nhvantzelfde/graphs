@@ -1,2 +1,2 @@
 # graphs
-Various graph algorithms and data structures
+Graph algorithms and related data structures
