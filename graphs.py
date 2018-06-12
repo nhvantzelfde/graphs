@@ -181,15 +181,15 @@ class Graph(object):
         d = [float("inf")] * self.vertexCount()
         d[v] = 0
 
-        for i in range(self.vertexCount()+1):
+        for i in range(self.vertexCount()):
             for edges in self.adj:
                 for e in edges:
                     if d[e.orig] + e.weight < d[e.dest]:
                         if i < (self.vertexCount()-1):
                             d[e.dest] = d[e.orig] + e.weight
                         else:
-                            # negative cycle on the path to this vertex
-                            d[e.dest] = -float("inf")
+                            # negative cycle exists
+                            return None
                             
         return d
         
@@ -238,8 +238,6 @@ class Graph(object):
 
         return d
             
-        
-
     def allPairsShortestPaths(self):
         pass
 
@@ -320,7 +318,6 @@ def buildTestGraph():
     graph.addEdge(5,1,3)
 
     return graph
-
 
 def main():
     kvp = KeyValuePair(1,0)
