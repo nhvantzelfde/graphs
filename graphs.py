@@ -23,6 +23,9 @@ class Graph(object):
         self.edge_count = 0
         self.neg_weights = False
 
+    def __str__(self):
+        return str(self.adj)
+
     def addVertex(self):
         self.adj.append([])
         return len(self.adj)-1
@@ -87,6 +90,12 @@ class Graph(object):
                 m[i][e.dest] = e.weight
         return m
     
+    def vertexCount(self):
+        return len(self.adj)
+
+    def edgeCount(self):
+        return self.edge_count
+   
     def BFS(self, v):
         if v >= len(self.adj):
             # can't be run, vertex doesn't exist
@@ -159,15 +168,77 @@ class Graph(object):
         else:
             return o   
 
-    def isCycle(self):
+    def cycleExists(self):
         p, o, c = self.DFS()
         return c
-    
-    def BellmanFord(self, s):
-        pass
 
-    def Dijkstra(self, s):
-        pass
+    def isDAG(self):
+        if not self.directed: return False
+        p, o, c = self.DFS()
+        return not c
+        
+    def BellmanFord(self, v):
+        d = [float("inf")] * self.vertexCount()
+        d[v] = 0
+
+        for i in range(self.vertexCount()+1):
+            for edges in self.adj:
+                for e in edges:
+                    if d[e.orig] + e.weight < d[e.dest]:
+                        if i < (self.vertexCount()-1):
+                            d[e.dest] = d[e.orig] + e.weight
+                        else:
+                            # negative cycle on the path to this vertex
+                            d[e.dest] = -float("inf")
+                            
+        return d
+        
+
+    def Dijkstra(self, v):
+        if self.neg_weights:
+            # Dijkstra won't run properly if weights are negative
+            return None
+        
+        q = MinHeap()
+        s = set()
+        d = [float("inf")] * self.vertexCount()
+        d[v] = 0
+        
+        for i in range(self.vertexCount()):
+            q.insert(KeyValuePair(d[i],i))
+
+        kvp = q.extractMin()
+        while kvp:
+            node = kvp.value
+            dist = kvp.key
+            if node not in s:
+                s.add(node)
+                for e in self.adj[node]:
+                    if e.dest not in s:
+                        if d[node] + e.weight < d[e.dest]:
+                            d[e.dest] = d[node] + e.weight
+                            q.insert(KeyValuePair(d[e.dest], e.dest))
+            kvp = q.extractMin()
+                
+        return d    
+
+    def DAGShortestPath(self, v):
+        if not self.directed: return None
+        p, o, c = self.DFS()
+        if c: return None
+
+        d = [float("inf")] * self.vertexCount()
+        d[v] = 0
+        
+        for i in o:
+            edges = self.adj[i]
+            for e in edges:
+                if d[e.orig] + e.weight < d[e.dest]:
+                   d[e.dest] = d[e.orig] + e.weight
+
+        return d
+            
+        
 
     def allPairsShortestPaths(self):
         pass
@@ -178,14 +249,15 @@ class Graph(object):
     def FloydWarshall(self):
         pass
 
-    def vertexCount(self):
-        return len(self.adj)
+    def minimumSpanningTree(self):
+        pass
 
-    def edgeCount(self):
-        return self.edge_count
+    def Prim(self):
+        pass
 
-    def __str__(self):
-        return str(self.adj)
+    def Kruskal(self):
+        pass
+    
 
 def buildCompleteGraph(vertices, directed = True, weighted = True):
     graph = Graph(directed)
@@ -216,19 +288,39 @@ def buildRandomGraph(vertices, edges, directed = True, weighted = True):
     i = 0
     while i < edges:
         u, v = random.randint(0,vertices-1),random.randint(0,vertices-1)
-        if not directed:
-            while v == u:
-                v = random.randint(0,vertices-1)
+        while v == u:
+            v = random.randint(0,vertices-1)
+        
+            
         if not graph.findEdge(u, v):
             w = 1
             if weighted:
-                w = random.randint(-5,10)
+                w = random.randint(-1,10)
                 while w == 0:
-                    w = random.randint(-5,10)
+                    w = random.randint(-1,10)
             graph.addEdge(u,v,w)
             i += 1
         
     return graph
+
+def buildTestGraph():
+    graph = Graph(True)
+    for i in range(6):
+        graph.addVertex()
+
+    graph.addEdge(0,4,9)
+    graph.addEdge(0,1,5)
+    graph.addEdge(1,2,5)
+    graph.addEdge(1,1,6)
+    graph.addEdge(2,0,6)
+    graph.addEdge(3,1,3)
+    graph.addEdge(4,3,1)
+    graph.addEdge(4,1,1)
+    graph.addEdge(5,5,1)
+    graph.addEdge(5,1,3)
+
+    return graph
+
 
 def main():
     kvp = KeyValuePair(1,0)
@@ -253,7 +345,7 @@ def main():
     print graph.asMatrix()
     
     print "\nRandom graph:"
-    graph = buildRandomGraph(6, 15, True)
+    graph = buildRandomGraph(6, 7, True)
     adj = graph.asAdjacency()
     for a in adj:
         for e in a:
@@ -272,7 +364,38 @@ def main():
     
     print "Adjacency matrix:"
     print graph.asMatrix()
+
+    print "Bellman-Ford from node 0"
+    d = graph.BellmanFord(0)
+    print d
+
+    print "Dijsktra from node 0"
+    d = graph.Dijkstra(0)
+    print d
+
+    print "DAG shortest path from node 0"
+    d = graph.DAGShortestPath(0)
+    print d
     
+    print "\nDesigned test graph:"
+    graph = buildTestGraph()
+    adj = graph.asAdjacency()
+    for a in adj:
+        for e in a:
+            print e
+
+    print "Bellman-Ford from node 0"
+    d = graph.BellmanFord(0)
+    print d
+
+    print "Dijsktra from node 0"
+    d = graph.Dijkstra(0)
+    print d
+
+    print "DAG shortest path from node 0"
+    d = graph.DAGShortestPath(0)
+    print d
+
     
 if __name__ == "__main__":
     main()
