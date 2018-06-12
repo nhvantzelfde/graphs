@@ -86,43 +86,7 @@ class Graph(object):
             for e in edges:
                 m[i][e.dest] = e.weight
         return m
-        
-
-    def DFS(self, node):
-        if node >= len(self.adj):
-            # can't be run, vertex doesn't exist
-            return None
-        
-        seen = set()
-        dist = [float("inf")] * self.vertexCount()
-        par = [None] * self.vertexCount()
-        fin = [None] * self.vertexCount()
-        seen.add(node)
-        dist[node] = 0
-        par[node] = "Source"
-
-        aux = [False,0] # aux[0] = cycle / back edge exists; aux[1] = edge count
-        
-        self.__DFSHelper(node,seen,dist,par,fin,aux)
-        
-        return (dist, par, fin, aux[0])
-
-    def __DFSHelper(self, node, seen, dist, par, fin, aux):
-        edges = self.adj[node]
-        for e in edges:
-            
-            if e.dest not in seen:
-                seen.add(e.dest)
-                dist[e.dest] = dist[node]+1
-                par[e.dest] = node
-                self.__DFSHelper(e.dest,seen,dist,par,fin,aux)
-            else:
-                if not fin[e.dest]:
-                    # cycle exists
-                    aux[0] = True
-        fin[node] = aux[1]
-        aux[1] += 1
-        
+    
     def BFS(self, v):
         if v >= len(self.adj):
             # can't be run, vertex doesn't exist
@@ -149,8 +113,56 @@ class Graph(object):
                     q.insert(KeyValuePair(d+1,e.dest))
             kvp = q.extractMin()
 
-        return distance
+        return distance       
 
+    def DFS(self):
+        seen = set()
+        par = [None] * self.vertexCount()
+        fin = [None] * self.vertexCount()
+        order = []
+
+        aux = [False,1] # aux[0] = cycle / back edge exists; aux[1] = finish count
+
+        for node in range(len(self.adj)):
+            if not fin[node]:
+                seen.add(node)
+                par[node] = "S"
+                self.__DFSHelper(node,seen,par,fin,order,aux)
+
+        order.reverse()
+        return (par, order, aux[0])
+
+    def __DFSHelper(self, node, seen, par, fin, order, aux):
+        edges = self.adj[node]
+        for e in edges:
+            if e.dest not in seen:
+                seen.add(e.dest)
+                par[e.dest] = node
+                self.__DFSHelper(e.dest,seen,par,fin,order,aux)
+            else:
+                if not fin[e.dest]:
+                    # cycle exists
+                    aux[0] = True
+        fin[node] = aux[1]
+        aux[1] += 1
+        order.append(node)
+        
+    def topologicalSort(self):
+        if not self.directed:
+            # undirected graph, cannot sort
+            return None
+        
+        p, o, c = self.DFS()
+        if c:
+            # cycle exists, cannot sort
+            return None
+        else:
+            return o   
+
+    def isCycle(self):
+        p, o, c = self.DFS()
+        return c
+    
     def BellmanFord(self, s):
         pass
 
@@ -233,15 +245,15 @@ def main():
     distance = graph.BFS(0)
     print distance
 
-    print "DFS on complete graph from node 0:"
-    d, p, f, c = graph.DFS(0)
-    print "d =", d, "p =", p, "f =", f, "cycle =",c
+    print "DFS on complete graph:"
+    p, o, c = graph.DFS()
+    print "p =", p, "o =", o, "cycle =",c
 
     print "Adjacency matrix:"
     print graph.asMatrix()
     
     print "\nRandom graph:"
-    graph = buildRandomGraph(6, 6, True)
+    graph = buildRandomGraph(6, 15, True)
     adj = graph.asAdjacency()
     for a in adj:
         for e in a:
@@ -251,12 +263,16 @@ def main():
     distance = graph.BFS(0)
     print distance
 
-    print "DFS on random graph from node 0:"
-    d, p, f, c = graph.DFS(0)
-    print "d =", d, "p =", p, "f =", f, "cycle =",c
+    print "DFS on random graph:"
+    p, o, c = graph.DFS()
+    print "p =", p, "o =", o, "cycle =",c
 
+    print "Topological sort:"
+    print graph.topologicalSort()
+    
     print "Adjacency matrix:"
     print graph.asMatrix()
+    
     
 if __name__ == "__main__":
     main()
