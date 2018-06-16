@@ -325,7 +325,6 @@ class Graph(object):
 
     def Kruskal(self):
         pass
-    
 
 def buildCompleteGraph(vertices, directed = True, weighted = True):
     """
